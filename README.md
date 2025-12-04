@@ -17,7 +17,7 @@ Notes importantes
 - Le vidage de la Corbeille utilise l'API Windows (P/Invoke). Aucune confirmation n'est demandée si l'option est activée.
 
 Options supplémentaires
-- Nettoyage du cache Chrome et Edge (fermez les navigateurs avant d'exécuter pour éviter les fichiers verrouillés).
+- Nettoyage du cache Chrome,Edge, Firefox (fermez les navigateurs avant d'exécuter pour éviter les fichiers verrouillés).
 - Nettoyage du dossier `C:\Windows\SoftwareDistribution\Download` (nécessite les droits administrateur).
 - Suppression des fichiers de vignettes (`thumbcache_*.db`) pour récupérer de l'espace.
 - Nettoyage du dossier `C:\Windows\Prefetch` (nécessite les droits administrateur).
