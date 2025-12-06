@@ -1,89 +1,87 @@
-# Windows Cleaner - WinForms
+Windows Cleaner - WinForms
 
-Outil minimal en C# (WinForms) pour nettoyer les fichiers temporaires utilisateur et optionnellement la corbeille.
+Minimal tool in C# (WinForms) to clean temporary user files and optionally the Recycle Bin.
 
-Usage rapide
-- Ouvrir un terminal PowerShell
-- Se placer dans le dossier du projet
+Quick Use
+- Open a PowerShell Terminal
+- Place yourself in the project folder
 
-```
-dotnet build
-dotnet run
-```
+"'
+Dotnet Build
+Dotnet Run
+"'
 
-Notes importantes
-- Exécuter l'application en tant qu'administrateur si vous voulez supprimer les fichiers du dossier Temp système.
-- Le mode "Dry Run" permet de voir les actions sans supprimer.
-- Le vidage de la Corbeille utilise l'API Windows (P/Invoke). Aucune confirmation n'est demandée si l'option est activée.
+Important Notes
+Run the application as an administrator if you want to delete files from the System Temp folder.
+- The "Dry Run" mode allows you to see actions without deleting.
+The Recycle Bin dump uses the Windows API (P/Invoke). No confirmation is required if the option is enabled.
 
-Options supplémentaires
-- Nettoyage du cache Chrome,Edge, Firefox (fermez les navigateurs avant d'exécuter pour éviter les fichiers verrouillés).
-- Nettoyage du dossier `C:\Windows\SoftwareDistribution\Download` (nécessite les droits administrateur).
-- Suppression des fichiers de vignettes (`thumbcache_*.db`) pour récupérer de l'espace.
-- Nettoyage du dossier `C:\Windows\Prefetch` (nécessite les droits administrateur).
-- Flush DNS (`ipconfig /flushdns`) pour vider le cache DNS local.
+Additional Options
+Chrome, Edge, Firefox cache cleanup (close browsers before running to avoid locked files).
+- Cleaning the folder 'C:\Windows\SoftwareDistribution\Download' (requires administrator rights).
+- Deleting thumbnail files ('thumbcache_*.db') to retrieve space.
+- Cleaning the 'C:\Windows\Prefetch' folder (requires administrator rights).
+- Flush DNS ('ipconfig /flushdns') to clear the local DNS cache.
+Interface and logs
+The app now offers a more professional interface with menu, progress bar and undo button.
+Logs are saved in the 'logs\windows-cleaner.log' folder next to the executable.
+You can export logs via 'File -> Export logs'.
 
-Interface et logs
-- L'application propose désormais une interface plus professionnelle avec menu, barre de progression et bouton d'annulation.
-- Les logs sont enregistrés dans le dossier `logs\windows-cleaner.log` à côté de l'exécutable.
-- Vous pouvez exporter les logs via `Fichier -> Exporter les logs`.
+Robustness and retresses
+The application now performs attempts (retries) with backoff to delete files and folders that can be locked by other processes. She tries several times before giving up and logs each attempt.
+- In 'Dry Run' mode deletions are not performed but are listed in the logs.
 
-Robustesse et retries
-- L'application effectue désormais des tentatives (retries) avec backoff pour supprimer les fichiers et dossiers qui peuvent être verrouillés par d'autres processus. Elle essaie plusieurs fois avant d'abandonner et logge chaque tentative.
-- En mode `Dry Run` les suppressions ne sont pas effectuées mais sont listées dans les logs.
-
-Licence (MIT)
+License (MIT)
 ----------------
-Ce projet est distribué sous la licence MIT. Le texte complet de la licence est inclus ci-dessous et dans le fichier `LICENSE` à la racine du projet.
+This project is distributed under the MIT license. The full text of the license is included below and in the 'LICENSE' file at the root of the project.
 
 MIT License
 
-Copyright (c) 2025 c.lecomte
+Copyright (c) 2025 c.lecomte.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
+the Software without restriction, including the right to the right to create a free service.
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
+copies of the Software, and to the right persons to whom the Software is, the Software is, and to which the Software is, the software is, which is created.
 furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. In No Event Shall the
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Software.
 
-Auteur
+Author
 ------
-`c.lecomte`
+'c.lecomte'
 
-Limites
-- Cet outil est minimal et ne gère pas tous les cas (verrou de fichiers, profils multiples, nettoyage approfondi). À utiliser avec précaution.
+Limits
+This tool is minimal and does not handle all cases (file lock, multiple profiles, deep cleaning). Use with caution.
 
-Licence
-- Aucun licence particulière fournie ici; utilisez à vos risques.
-
-Developer helper
+License
+No special license provided here; use at your own risk.
+Developer Helper
 ----------------
 
-Un script PowerShell pratique est inclus pour appliquer le format, vérifier la build et préparer un commit groupé :
+A handy PowerShell script is included to apply the format, check the build, and prepare a group commit:
 
-- `scripts/prepare_commit.ps1`
+- 'scripts/prepare_commit.ps1'
 
-Usage :
+Use:
 
-```powershell
+" Powershell "
 .\scripts\prepare_commit.ps1
-```
+"'
 
-Le script :
-- Exécute `dotnet format` (si installé) ; sinon propose l'installation.
-- Exécute `dotnet build` pour vérifier que tout compile.
-- Propose d'exécuter `git add -A` + `git commit -m "..."` pour regrouper les modifications en un seul commit.
+The script:
+- Runs 'dotnet format' (if installed); otherwise offers installation.
+- Runs 'dotnet build' to check that everything is compiling.
+- Proposes to run 'git add -A' + 'git commit -m...' to group changes into a single commit.
 
-Conseil : utilisez ce script avant de pousser vos changements pour garder un historique propre.
+Tip: Use this script before you push your changes to keep a clean history.
