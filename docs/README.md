@@ -87,7 +87,7 @@ windows-cleaner.exe --stats
 - **📊 Analyse d'Espace Disque** : Catégorisation par type, détection des plus gros fichiers
 - **🔍 Détecteur de Doublons** : Hash MD5, filtres par extension, suppression intelligente
 - **⏰ Planificateur de Tâches** : Intégration Windows Task Scheduler (quotidien/hebdo/mensuel)
-- **📈 Statistiques et Rapports** : Historique complet, rapports HTML avec graphiques
+ - **📈 Statistiques et Rapports** : Rapports HTML pro (analyse disque, doublons, stats) générés et ouverts automatiquement (copie sur Bureau), historique complet, graphiques
 - **💾 Backup et Restauration** : Points de restauration système, backup automatique < 24h
 - **⌨️ Support CLI Complet** : Arguments --profile, --dry-run, --silent, --stats, --help
 - **🔔 Alertes Intelligentes** : Monitoring proactif (disque < 10%, cache > 2GB, maintenance)
