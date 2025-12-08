@@ -321,7 +321,7 @@ SOFTWARE.
 
 ## 👤 Auteur
 
-**C.L**
+**C.L (Skill_teams)**
 
 ## ⚠️ Limitations
 
