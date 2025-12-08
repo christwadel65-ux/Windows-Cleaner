@@ -981,12 +981,28 @@ SOFTWARE.";
             var path = dialog.SelectedPath;
             Logger.Log(LogLevel.Info, $"Démarrage de l'analyse du dossier : {path}");
             statusLabel.Text = "Analyse en cours...";
+            progressBar.Value = 0;
             btnClean.Enabled = false;
             btnDryRun.Enabled = false;
 
             try
             {
-                var progress = new Action<string>(msg => statusLabel.Text = msg);
+                var progress = new Action<string>(msg => 
+                {
+                    if (InvokeRequired)
+                    {
+                        Invoke(new Action(() => 
+                        {
+                            statusLabel.Text = msg;
+                            progressBar.Value = Math.Min(progressBar.Value + 2, 95);
+                        }));
+                    }
+                    else
+                    {
+                        statusLabel.Text = msg;
+                        progressBar.Value = Math.Min(progressBar.Value + 2, 95);
+                    }
+                });
 
                 var result = await Task.Run(() => DiskAnalyzer.AnalyzeDirectory(path, 100, progress));
 
@@ -1030,11 +1046,13 @@ SOFTWARE.";
 
                 Logger.Log(LogLevel.Info, $"Analyse terminée : {result.TotalScannedFiles} fichiers, {FormatBytes(result.TotalScannedSize)}");
                 statusLabel.Text = "Analyse terminée";
+                progressBar.Value = 100;
             }
             catch (Exception ex)
             {
                 Logger.Log(LogLevel.Error, $"Erreur lors de l'analyse : {ex.Message}");
                 MessageBox.Show($"Erreur lors de l'analyse :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                progressBar.Value = 0;
             }
             finally
             {
@@ -1051,12 +1069,28 @@ SOFTWARE.";
             var path = dialog.SelectedPath;
             Logger.Log(LogLevel.Info, $"Recherche de doublons dans : {path}");
             statusLabel.Text = "Recherche de doublons...";
+            progressBar.Value = 0;
             btnClean.Enabled = false;
             btnDryRun.Enabled = false;
 
             try
             {
-                var progress = new Action<string>(msg => statusLabel.Text = msg);
+                var progress = new Action<string>(msg => 
+                {
+                    if (InvokeRequired)
+                    {
+                        Invoke(new Action(() => 
+                        {
+                            statusLabel.Text = msg;
+                            progressBar.Value = Math.Min(progressBar.Value + 1, 95);
+                        }));
+                    }
+                    else
+                    {
+                        statusLabel.Text = msg;
+                        progressBar.Value = Math.Min(progressBar.Value + 1, 95);
+                    }
+                });
                 var duplicates = await Task.Run(() => DuplicateFinder.FindDuplicates(path, 1024, null, progress));
 
                 if (duplicates.DuplicateGroups.Count == 0)
@@ -1107,11 +1141,13 @@ SOFTWARE.";
                 }
                 
                 statusLabel.Text = "Recherche terminée";
+                progressBar.Value = 100;
             }
             catch (Exception ex)
             {
                 Logger.Log(LogLevel.Error, $"Erreur lors de la recherche : {ex.Message}");
                 MessageBox.Show($"Erreur :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                progressBar.Value = 0;
             }
             finally
             {
@@ -1257,12 +1293,29 @@ SOFTWARE.";
                 return;
 
             statusLabel.Text = "Création du point de restauration...";
+            progressBar.Value = 0;
             btnClean.Enabled = false;
             btnDryRun.Enabled = false;
 
             try
             {
+                // Animation de la progress bar
+                var progressTask = Task.Run(async () =>
+                {
+                    for (int i = 0; i < 90; i += 5)
+                    {
+                        await Task.Delay(500);
+                        if (InvokeRequired)
+                            Invoke(new Action(() => progressBar.Value = i));
+                        else
+                            progressBar.Value = i;
+                    }
+                });
+
                 var success = await Task.Run(() => BackupManager.CreateSystemRestorePoint("Windows Cleaner Manuel"));
+                
+                await progressTask;
+                progressBar.Value = 100;
                 
                 if (success)
                 {
@@ -1279,6 +1332,7 @@ SOFTWARE.";
             {
                 MessageBox.Show($"Erreur :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Logger.Log(LogLevel.Error, $"Erreur point de restauration : {ex.Message}");
+                progressBar.Value = 0;
             }
             finally
             {
@@ -1301,6 +1355,7 @@ SOFTWARE.";
                 return;
 
             statusLabel.Text = "Optimisations en cours...";
+            progressBar.Value = 0;
             btnClean.Enabled = false;
             btnDryRun.Enabled = false;
 
@@ -1311,16 +1366,24 @@ SOFTWARE.";
                 Logger.Log(LogLevel.Info, "Démarrage des optimisations système");
                 
                 // TRIM SSD
+                progressBar.Value = 10;
+                statusLabel.Text = "Optimisation SSD (TRIM)...";
                 var trimResult = await Task.Run(() => SystemOptimizer.OptimizeSsd());
                 results.AppendLine($"TRIM SSD : {(trimResult ? "✓ Succès" : "✗ Échec")}");
                 
                 // Compaction registre
+                progressBar.Value = 40;
+                statusLabel.Text = "Compaction du registre...";
                 var regResult = await Task.Run(() => SystemOptimizer.CompactRegistry());
                 results.AppendLine($"Compaction Registre : {(regResult ? "✓ Succès" : "✗ Échec")}");
                 
                 // Nettoyage mémoire
+                progressBar.Value = 70;
+                statusLabel.Text = "Nettoyage mémoire cache...";
                 var memResult = await Task.Run(() => SystemOptimizer.ClearStandbyMemory());
                 results.AppendLine($"Nettoyage Mémoire : {(memResult ? "✓ Succès" : "✗ Échec")}");
+                
+                progressBar.Value = 100;
                 
                 MessageBox.Show($"Optimisations terminées :\n\n{results}", "Résultats", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 Logger.Log(LogLevel.Info, "Optimisations système terminées");
@@ -1329,6 +1392,7 @@ SOFTWARE.";
             {
                 MessageBox.Show($"Erreur :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Logger.Log(LogLevel.Error, $"Erreur optimisation : {ex.Message}");
+                progressBar.Value = 0;
             }
             finally
             {
