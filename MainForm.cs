@@ -141,10 +141,26 @@ namespace WindowsCleaner
             var accentBlue = new ToolStripMenuItem("Accent Bleu");
             var accentGreen = new ToolStripMenuItem("Accent Vert");
             var accentOrange = new ToolStripMenuItem("Accent Orange");
+            var toolsMenu = new ToolStripMenuItem("Outils");
+            var diskAnalyzerMenuItem = new ToolStripMenuItem("📊 Analyser l'espace disque");
+            var duplicateFinderMenuItem = new ToolStripMenuItem("🔍 Détecter les doublons");
+            var statisticsMenuItem = new ToolStripMenuItem("📈 Voir les statistiques");
+            var profilesMenuItem = new ToolStripMenuItem("📋 Gérer les profils");
+            var schedulerMenuItem = new ToolStripMenuItem("⏰ Planifier un nettoyage");
+            var backupMenuItem = new ToolStripMenuItem("💾 Créer un point de restauration");
+            var optimizerMenuItem = new ToolStripMenuItem("⚡ Optimiser le système");
+            
             var helpMenu = new ToolStripMenuItem("Aide");
             var aboutMenuItem = new ToolStripMenuItem("À propos");
             
             aboutMenuItem.Click += AboutMenuItem_Click;
+            diskAnalyzerMenuItem.Click += DiskAnalyzerMenuItem_Click;
+            duplicateFinderMenuItem.Click += DuplicateFinderMenuItem_Click;
+            statisticsMenuItem.Click += StatisticsMenuItem_Click;
+            profilesMenuItem.Click += ProfilesMenuItem_Click;
+            schedulerMenuItem.Click += SchedulerMenuItem_Click;
+            backupMenuItem.Click += BackupMenuItem_Click;
+            optimizerMenuItem.Click += OptimizerMenuItem_Click;
             clearLogsMenuItem.Click += ClearLogsMenuItem_Click;
             readLogsMenuItem.Click += ReadLogsMenuItem_Click;
             exportLogsMenuItem.Click += ExportLogsMenuItem_Click;
@@ -170,6 +186,17 @@ namespace WindowsCleaner
             viewMenu.DropDownItems.Add(accentGreen);
             viewMenu.DropDownItems.Add(accentOrange);
             menu.Items.Add(viewMenu);
+            
+            toolsMenu.DropDownItems.Add(diskAnalyzerMenuItem);
+            toolsMenu.DropDownItems.Add(duplicateFinderMenuItem);
+            toolsMenu.DropDownItems.Add(new ToolStripSeparator());
+            toolsMenu.DropDownItems.Add(statisticsMenuItem);
+            toolsMenu.DropDownItems.Add(profilesMenuItem);
+            toolsMenu.DropDownItems.Add(new ToolStripSeparator());
+            toolsMenu.DropDownItems.Add(schedulerMenuItem);
+            toolsMenu.DropDownItems.Add(backupMenuItem);
+            toolsMenu.DropDownItems.Add(optimizerMenuItem);
+            menu.Items.Add(toolsMenu);
             
             helpMenu.DropDownItems.Add(aboutMenuItem);
             menu.Items.Add(helpMenu);
@@ -944,6 +971,384 @@ SOFTWARE.";
                 btnCancel.Visible = false;
                 _cts = null;
             }
+        }
+
+        private async void DiskAnalyzerMenuItem_Click(object? sender, EventArgs e)
+        {
+            var dialog = new FolderBrowserDialog { Description = "Sélectionnez le dossier à analyser" };
+            if (dialog.ShowDialog() != DialogResult.OK) return;
+
+            var path = dialog.SelectedPath;
+            Logger.Log(LogLevel.Info, $"Démarrage de l'analyse du dossier : {path}");
+            statusLabel.Text = "Analyse en cours...";
+            btnClean.Enabled = false;
+            btnDryRun.Enabled = false;
+
+            try
+            {
+                var progress = new Action<string>(msg => statusLabel.Text = msg);
+
+                var result = await Task.Run(() => DiskAnalyzer.AnalyzeDirectory(path, 100, progress));
+
+                // Afficher les résultats
+                var report = new System.Text.StringBuilder();
+                report.AppendLine($"=== ANALYSE D'ESPACE DISQUE ===\n");
+                report.AppendLine($"Dossier : {path}");
+                report.AppendLine($"Fichiers totaux : {result.TotalScannedFiles:N0}");
+                report.AppendLine($"Taille totale : {FormatBytes(result.TotalScannedSize)}\n");
+                report.AppendLine("--- PAR CATÉGORIE ---");
+                foreach (var cat in result.Categories.OrderByDescending(c => c.TotalSize))
+                {
+                    report.AppendLine($"{cat.Name,-20} : {cat.FormattedSize,15} ({cat.Percentage:F1}%)");
+                }
+                
+                report.AppendLine("\n--- TOP 20 PLUS GROS FICHIERS ---");
+                foreach (var file in result.LargestFiles.Take(20))
+                {
+                    report.AppendLine($"{FormatBytes(file.Size),15}  {file.Path}");
+                }
+
+                // Afficher dans une MessageBox avec possibilité de copier
+                var resultForm = new Form
+                {
+                    Text = "Résultats de l'analyse",
+                    Width = 900,
+                    Height = 700,
+                    StartPosition = FormStartPosition.CenterParent
+                };
+                var textBox = new TextBox
+                {
+                    Multiline = true,
+                    ScrollBars = ScrollBars.Both,
+                    Dock = DockStyle.Fill,
+                    Font = new Font("Consolas", 9),
+                    Text = report.ToString(),
+                    ReadOnly = true
+                };
+                resultForm.Controls.Add(textBox);
+                resultForm.ShowDialog(this);
+
+                Logger.Log(LogLevel.Info, $"Analyse terminée : {result.TotalScannedFiles} fichiers, {FormatBytes(result.TotalScannedSize)}");
+                statusLabel.Text = "Analyse terminée";
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(LogLevel.Error, $"Erreur lors de l'analyse : {ex.Message}");
+                MessageBox.Show($"Erreur lors de l'analyse :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnClean.Enabled = true;
+                btnDryRun.Enabled = true;
+            }
+        }
+
+        private async void DuplicateFinderMenuItem_Click(object? sender, EventArgs e)
+        {
+            var dialog = new FolderBrowserDialog { Description = "Sélectionnez le dossier où chercher les doublons" };
+            if (dialog.ShowDialog() != DialogResult.OK) return;
+
+            var path = dialog.SelectedPath;
+            Logger.Log(LogLevel.Info, $"Recherche de doublons dans : {path}");
+            statusLabel.Text = "Recherche de doublons...";
+            btnClean.Enabled = false;
+            btnDryRun.Enabled = false;
+
+            try
+            {
+                var progress = new Action<string>(msg => statusLabel.Text = msg);
+                var duplicates = await Task.Run(() => DuplicateFinder.FindDuplicates(path, 1024, null, progress));
+
+                if (duplicates.DuplicateGroups.Count == 0)
+                {
+                    MessageBox.Show("Aucun doublon trouvé !", "Résultat", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    Logger.Log(LogLevel.Info, "Aucun doublon trouvé");
+                }
+                else
+                {
+                    var report = new System.Text.StringBuilder();
+                    report.AppendLine($"=== DOUBLONS DÉTECTÉS : {duplicates.DuplicateGroups.Count} groupes ===\n");
+                    
+                    long totalWasted = duplicates.TotalWastedSpace;
+                    int groupNum = 1;
+                    foreach (var group in duplicates.DuplicateGroups.Take(50)) // Limiter à 50 groupes pour l'affichage
+                    {
+                        report.AppendLine($"Groupe {groupNum++} - {FormatBytes(group.Files[0].Size)} - {group.Files.Count} copies :");
+                        foreach (var file in group.Files)
+                            report.AppendLine($"  • {file}");
+                        report.AppendLine();
+                    }
+                    
+                    if (duplicates.DuplicateGroups.Count > 50)
+                        report.AppendLine($"... et {duplicates.DuplicateGroups.Count - 50} autres groupes");
+                    
+                    report.AppendLine($"\nEspace récupérable : {FormatBytes(totalWasted)}");
+
+                    var resultForm = new Form
+                    {
+                        Text = $"Doublons détectés - {duplicates.DuplicateGroups.Count} groupes",
+                        Width = 900,
+                        Height = 700,
+                        StartPosition = FormStartPosition.CenterParent
+                    };
+                    var textBox = new TextBox
+                    {
+                        Multiline = true,
+                        ScrollBars = ScrollBars.Both,
+                        Dock = DockStyle.Fill,
+                        Font = new Font("Consolas", 9),
+                        Text = report.ToString(),
+                        ReadOnly = true
+                    };
+                    resultForm.Controls.Add(textBox);
+                    resultForm.ShowDialog(this);
+
+                    Logger.Log(LogLevel.Info, $"{duplicates.DuplicateGroups.Count} groupes de doublons trouvés, {FormatBytes(totalWasted)} récupérables");
+                }
+                
+                statusLabel.Text = "Recherche terminée";
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(LogLevel.Error, $"Erreur lors de la recherche : {ex.Message}");
+                MessageBox.Show($"Erreur :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnClean.Enabled = true;
+                btnDryRun.Enabled = true;
+            }
+        }
+
+        private void StatisticsMenuItem_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                var allStats = StatisticsManager.LoadAllStatistics();
+                
+                var report = new System.Text.StringBuilder();
+                report.AppendLine($"=== STATISTIQUES DE NETTOYAGE ===\n");
+                report.AppendLine($"Nombre de sessions : {allStats.Count}");
+                report.AppendLine($"Espace total libéré : {FormatBytes(allStats.Sum(s => s.BytesFreed))}");
+                report.AppendLine($"Fichiers totaux supprimés : {allStats.Sum(s => s.FilesDeleted):N0}\n");
+                
+                if (allStats.Count > 0)
+                {
+                    report.AppendLine("--- DERNIÈRES SESSIONS ---");
+                    foreach (var session in allStats.OrderByDescending(s => s.Timestamp).Take(10))
+                    {
+                        report.AppendLine($"\n{session.Timestamp:yyyy-MM-dd HH:mm:ss}");
+                        report.AppendLine($"  Profil : {session.ProfileUsed}");
+                        report.AppendLine($"  Espace libéré : {FormatBytes(session.BytesFreed)}");
+                        report.AppendLine($"  Fichiers supprimés : {session.FilesDeleted}");
+                        report.AppendLine($"  Durée : {session.Duration:hh\\:mm\\:ss}");
+                    }
+                    
+                    // Proposer d'exporter en HTML
+                    report.AppendLine("\n\n--- EXPORT HTML DISPONIBLE ---");
+                    report.AppendLine("Utilisez 'Générer rapport HTML' pour un rapport visuel complet avec graphiques.");
+                }
+                else
+                {
+                    report.AppendLine("Aucune statistique disponible. Effectuez un nettoyage pour commencer.");
+                }
+
+                var resultForm = new Form
+                {
+                    Text = "Statistiques",
+                    Width = 800,
+                    Height = 600,
+                    StartPosition = FormStartPosition.CenterParent
+                };
+                
+                var panel = new Panel { Dock = DockStyle.Fill };
+                var textBox = new TextBox
+                {
+                    Multiline = true,
+                    ScrollBars = ScrollBars.Both,
+                    Dock = DockStyle.Fill,
+                    Font = new Font("Consolas", 9),
+                    Text = report.ToString(),
+                    ReadOnly = true
+                };
+                
+                var btnExportHtml = new Button
+                {
+                    Text = "📊 Générer rapport HTML",
+                    Dock = DockStyle.Bottom,
+                    Height = 40,
+                    Font = new Font("Segoe UI", 10, FontStyle.Bold)
+                };
+                
+                btnExportHtml.Click += (s, ev) =>
+                {
+                    try
+                    {
+                        var saveDialog = new SaveFileDialog
+                        {
+                            Filter = "Fichiers HTML|*.html",
+                            FileName = $"statistics_{DateTime.Now:yyyyMMdd_HHmmss}.html"
+                        };
+                        
+                        if (saveDialog.ShowDialog() == DialogResult.OK)
+                        {
+                            var html = StatisticsManager.GenerateHtmlReport();
+                            System.IO.File.WriteAllText(saveDialog.FileName, html);
+                            MessageBox.Show($"Rapport exporté :\n{saveDialog.FileName}", "Export réussi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            
+                            // Ouvrir le fichier
+                            if (MessageBox.Show("Ouvrir le rapport maintenant ?", "Ouvrir", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                            {
+                                Process.Start(new ProcessStartInfo(saveDialog.FileName) { UseShellExecute = true });
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Erreur lors de l'export :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                };
+                
+                panel.Controls.Add(textBox);
+                panel.Controls.Add(btnExportHtml);
+                resultForm.Controls.Add(panel);
+                resultForm.ShowDialog(this);
+                
+                Logger.Log(LogLevel.Info, "Statistiques affichées");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors du chargement des statistiques :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Log(LogLevel.Error, $"Erreur statistiques : {ex.Message}");
+            }
+        }
+
+        private void ProfilesMenuItem_Click(object? sender, EventArgs e)
+        {
+            var profiles = new[] { "Nettoyage Rapide", "Nettoyage Complet", "Nettoyage Développeur", "Protection Vie Privée" };
+            
+            var msg = "PROFILS PRÉDÉFINIS :\n\n";
+            msg += "• Nettoyage Rapide - Usage quotidien rapide et sûr\n";
+            msg += "• Nettoyage Complet - Maintenance approfondie mensuelle\n";
+            msg += "• Nettoyage Développeur - Spécial projets de développement\n";
+            msg += "• Protection Vie Privée - Effacement des traces\n\n";
+            msg += "Pour utiliser un profil, lancez l'application en ligne de commande :\n";
+            msg += "windows-cleaner.exe --profile \"Nettoyage Rapide\"";
+            
+            MessageBox.Show(msg, "Profils disponibles", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void SchedulerMenuItem_Click(object? sender, EventArgs e)
+        {
+            var msg = "PLANIFICATION DE TÂCHES\n\n";
+            msg += "Pour planifier un nettoyage automatique, utilisez la ligne de commande :\n\n";
+            msg += "Exemple - Nettoyage quotidien à 2h du matin :\n";
+            msg += "Créez une tâche Windows avec l'action :\n";
+            msg += "  windows-cleaner.exe --profile \"Nettoyage Rapide\" --silent\n\n";
+            msg += "Cette fonctionnalité nécessite des droits administrateur.";
+            
+            MessageBox.Show(msg, "Planification", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private async void BackupMenuItem_Click(object? sender, EventArgs e)
+        {
+            if (MessageBox.Show("Créer un point de restauration système maintenant ?\n\nCela peut prendre quelques minutes.", 
+                "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            statusLabel.Text = "Création du point de restauration...";
+            btnClean.Enabled = false;
+            btnDryRun.Enabled = false;
+
+            try
+            {
+                var success = await Task.Run(() => BackupManager.CreateSystemRestorePoint("Windows Cleaner Manuel"));
+                
+                if (success)
+                {
+                    MessageBox.Show("Point de restauration créé avec succès !", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    Logger.Log(LogLevel.Info, "Point de restauration créé manuellement");
+                }
+                else
+                {
+                    MessageBox.Show("Échec de la création du point de restauration.\nVérifiez que la Protection Système est activée.", 
+                        "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Log(LogLevel.Error, $"Erreur point de restauration : {ex.Message}");
+            }
+            finally
+            {
+                statusLabel.Text = "Prêt";
+                btnClean.Enabled = true;
+                btnDryRun.Enabled = true;
+            }
+        }
+
+        private async void OptimizerMenuItem_Click(object? sender, EventArgs e)
+        {
+            var msg = "OPTIMISATIONS SYSTÈME DISPONIBLES :\n\n";
+            msg += "• TRIM SSD - Optimise les disques SSD\n";
+            msg += "• Compaction Registre - Réduit la fragmentation\n";
+            msg += "• Nettoyage Mémoire Cache - Libère la RAM\n\n";
+            msg += "Ces opérations nécessitent des droits administrateur.\n";
+            msg += "Lancer les optimisations maintenant ?";
+            
+            if (MessageBox.Show(msg, "Optimisations système", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            statusLabel.Text = "Optimisations en cours...";
+            btnClean.Enabled = false;
+            btnDryRun.Enabled = false;
+
+            try
+            {
+                var results = new System.Text.StringBuilder();
+                
+                Logger.Log(LogLevel.Info, "Démarrage des optimisations système");
+                
+                // TRIM SSD
+                var trimResult = await Task.Run(() => SystemOptimizer.OptimizeSsd());
+                results.AppendLine($"TRIM SSD : {(trimResult ? "✓ Succès" : "✗ Échec")}");
+                
+                // Compaction registre
+                var regResult = await Task.Run(() => SystemOptimizer.CompactRegistry());
+                results.AppendLine($"Compaction Registre : {(regResult ? "✓ Succès" : "✗ Échec")}");
+                
+                // Nettoyage mémoire
+                var memResult = await Task.Run(() => SystemOptimizer.ClearStandbyMemory());
+                results.AppendLine($"Nettoyage Mémoire : {(memResult ? "✓ Succès" : "✗ Échec")}");
+                
+                MessageBox.Show($"Optimisations terminées :\n\n{results}", "Résultats", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Logger.Log(LogLevel.Info, "Optimisations système terminées");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur :\n{ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Log(LogLevel.Error, $"Erreur optimisation : {ex.Message}");
+            }
+            finally
+            {
+                statusLabel.Text = "Prêt";
+                btnClean.Enabled = true;
+                btnDryRun.Enabled = true;
+            }
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            double len = bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+            return $"{len:0.##} {sizes[order]}";
         }
     }
 }
