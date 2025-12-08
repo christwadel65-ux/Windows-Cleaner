@@ -116,7 +116,20 @@ namespace WindowsCleaner
                         FilesDeleted = result.FilesDeleted,
                         BytesFreed = result.BytesFreed,
                         Duration = duration,
-                        WasDryRun = dryRun
+                        WasDryRun = dryRun,
+                        
+                        // App cache stats
+                        VsCodeCacheFilesDeleted = result.VsCodeCacheFilesDeleted,
+                        NugetCacheFilesDeleted = result.NugetCacheFilesDeleted,
+                        MavenCacheFilesDeleted = result.MavenCacheFilesDeleted,
+                        NpmCacheFilesDeleted = result.NpmCacheFilesDeleted,
+                        GameCachesFilesDeleted = result.GameCachesFilesDeleted,
+                        AppCachesBytesFreed = result.AppCachesBytesFreed,
+                        
+                        // SSD stats
+                        SsdOptimized = result.SsdOptimized,
+                        DiskHealthChecked = result.DiskHealthChecked,
+                        DiskHealthReport = result.DiskHealthReport
                     });
                 }
                 

@@ -18,7 +18,24 @@ namespace WindowsCleaner
         public TimeSpan Duration { get; set; }
         public bool WasDryRun { get; set; }
         
+        // App cache cleaning stats
+        public int VsCodeCacheFilesDeleted { get; set; }
+        public int NugetCacheFilesDeleted { get; set; }
+        public int MavenCacheFilesDeleted { get; set; }
+        public int NpmCacheFilesDeleted { get; set; }
+        public int GameCachesFilesDeleted { get; set; }
+        public long AppCachesBytesFreed { get; set; }
+        
+        // SSD optimization stats
+        public bool SsdOptimized { get; set; }
+        public bool DiskHealthChecked { get; set; }
+        public string DiskHealthReport { get; set; } = string.Empty;
+        
         public string FormattedSize => FormatBytes(BytesFreed);
+        public string FormattedAppCachesSize => FormatBytes(AppCachesBytesFreed);
+        public int TotalCachesDeleted => VsCodeCacheFilesDeleted + NugetCacheFilesDeleted + 
+                                          MavenCacheFilesDeleted + NpmCacheFilesDeleted + 
+                                          GameCachesFilesDeleted;
         
         private static string FormatBytes(long bytes)
         {
@@ -164,6 +181,20 @@ namespace WindowsCleaner
             var last30Bytes = last30Days.Sum(s => s.BytesFreed);
             var last30Files = last30Days.Sum(s => s.FilesDeleted);
             
+            // Statistiques App Cache
+            var totalAppCacheFiles = allStats.Sum(s => s.TotalCachesDeleted);
+            var totalAppCacheBytes = allStats.Sum(s => s.AppCachesBytesFreed);
+            var vsCodeTotal = allStats.Sum(s => s.VsCodeCacheFilesDeleted);
+            var nugetTotal = allStats.Sum(s => s.NugetCacheFilesDeleted);
+            var mavenTotal = allStats.Sum(s => s.MavenCacheFilesDeleted);
+            var npmTotal = allStats.Sum(s => s.NpmCacheFilesDeleted);
+            var gameTotal = allStats.Sum(s => s.GameCachesFilesDeleted);
+            
+            // Statistiques SSD
+            var ssdOptimizationCount = allStats.Count(s => s.SsdOptimized);
+            var diskHealthCheckCount = allStats.Count(s => s.DiskHealthChecked);
+            var lastSmartReport = allStats.LastOrDefault(s => !string.IsNullOrEmpty(s.DiskHealthReport));
+            
             var html = $@"
 <!DOCTYPE html>
 <html>
@@ -234,6 +265,32 @@ namespace WindowsCleaner
             color: #666;
             font-size: 12px;
         }}
+        .cache-section {{
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }}
+        .cache-grid {{
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }}
+        .cache-item {{
+            background: white;
+            padding: 10px;
+            border-radius: 3px;
+            border-left: 3px solid #667eea;
+        }}
+        .ssd-section {{
+            background: #fff3f0;
+            border-left: 4px solid #f5576c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }}
     </style>
 </head>
 <body>
@@ -273,14 +330,73 @@ namespace WindowsCleaner
             </div>
         </div>
         
-        <h2>Historique des Sessions</h2>
+        <h2>🗂️ Nettoyage des Caches Applicatifs</h2>
+        <div class=""cache-section"">
+            <h3 style=""margin-top: 0;"">Statistiques Globales</h3>
+            <div class=""cache-grid"">
+                <div class=""cache-item"">
+                    <strong>Total Fichiers Cache:</strong> {totalAppCacheFiles:N0}
+                </div>
+                <div class=""cache-item"">
+                    <strong>Espace Libéré:</strong> {FormatBytes(totalAppCacheBytes)}
+                </div>
+            </div>
+            
+            <h3 style=""margin-top: 20px;"">Détails par Source</h3>
+            <div class=""cache-grid"">
+                <div class=""cache-item"">
+                    <strong>VS Code:</strong> {vsCodeTotal:N0} fichiers
+                </div>
+                <div class=""cache-item"">
+                    <strong>NuGet:</strong> {nugetTotal:N0} fichiers
+                </div>
+                <div class=""cache-item"">
+                    <strong>Maven:</strong> {mavenTotal:N0} fichiers
+                </div>
+                <div class=""cache-item"">
+                    <strong>npm:</strong> {npmTotal:N0} fichiers
+                </div>
+                <div class=""cache-item"">
+                    <strong>Jeux (Steam/Epic):</strong> {gameTotal:N0} fichiers
+                </div>
+            </div>
+        </div>
+        
+        <h2>💿 Optimisation SSD</h2>
+        <div class=""ssd-section"">
+            <div style=""display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;"">
+                <div>
+                    <strong>Optimisations TRIM:</strong> {ssdOptimizationCount} session(s)
+                </div>
+                <div>
+                    <strong>Vérifications SMART:</strong> {diskHealthCheckCount} session(s)
+                </div>
+            </div>";
+            
+            // Ajouter le dernier rapport SMART s'il existe
+            if (lastSmartReport != null && !string.IsNullOrEmpty(lastSmartReport.DiskHealthReport))
+            {
+                var escapedReport = System.Web.HttpUtility.HtmlEncode(lastSmartReport.DiskHealthReport);
+                html += $@"
+            <h3 style=""margin-top: 20px;"">Dernier Rapport SMART</h3>
+            <div style=""background: white; padding: 10px; border-radius: 3px; font-family: monospace; font-size: 12px; white-space: pre-wrap; overflow-x: auto; max-height: 200px;"">
+{escapedReport}
+            </div>";
+            }
+            
+            html += @"
+        </div>
+        
+        <h2>📋 Historique des Sessions</h2>
         <table>
             <thead>
                 <tr>
                     <th>Date</th>
                     <th>Profil</th>
-                    <th>Fichiers Supprimés</th>
+                    <th>Fichiers</th>
                     <th>Espace Libéré</th>
+                    <th>App Cache</th>
+                    <th>SSD</th>
                     <th>Durée</th>
                 </tr>
             </thead>
@@ -289,12 +405,17 @@ namespace WindowsCleaner
 
             foreach (var stat in allStats.OrderByDescending(s => s.Timestamp).Take(50))
             {
+                var appCacheIndicator = stat.TotalCachesDeleted > 0 ? $"✓ ({stat.TotalCachesDeleted})" : "-";
+                var ssdIndicator = stat.SsdOptimized ? "✓" : "-";
+                
                 html += $@"
                 <tr>
                     <td>{stat.Timestamp:dd/MM/yyyy HH:mm}</td>
                     <td>{stat.ProfileUsed}</td>
                     <td>{stat.FilesDeleted:N0}</td>
                     <td>{stat.FormattedSize}</td>
+                    <td>{appCacheIndicator}</td>
+                    <td>{ssdIndicator}</td>
                     <td>{stat.Duration.TotalSeconds:0.0}s</td>
                 </tr>
 ";

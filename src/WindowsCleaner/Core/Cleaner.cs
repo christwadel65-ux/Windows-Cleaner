@@ -100,6 +100,28 @@ namespace WindowsCleaner
         public int FilesDeleted { get; set; }
         /// <summary>Nombre d'octets libérés</summary>
         public long BytesFreed { get; set; }
+        
+        // Statistiques d'app cache
+        /// <summary>Fichiers VS Code cache supprimés</summary>
+        public int VsCodeCacheFilesDeleted { get; set; }
+        /// <summary>Fichiers NuGet cache supprimés</summary>
+        public int NugetCacheFilesDeleted { get; set; }
+        /// <summary>Fichiers Maven cache supprimés</summary>
+        public int MavenCacheFilesDeleted { get; set; }
+        /// <summary>Fichiers npm cache supprimés</summary>
+        public int NpmCacheFilesDeleted { get; set; }
+        /// <summary>Fichiers jeux cache supprimés</summary>
+        public int GameCachesFilesDeleted { get; set; }
+        /// <summary>Octets app cache libérés</summary>
+        public long AppCachesBytesFreed { get; set; }
+        
+        // Statistiques SSD
+        /// <summary>Indique si l'optimisation SSD a été exécutée</summary>
+        public bool SsdOptimized { get; set; }
+        /// <summary>Indique si une vérification SMART a été effectuée</summary>
+        public bool DiskHealthChecked { get; set; }
+        /// <summary>Rapport SMART de santé du disque</summary>
+        public string DiskHealthReport { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -574,7 +596,13 @@ namespace WindowsCleaner
                     try
                     {
                         var r = CleanVsCodeCache(options.DryRun, threadSafeLog, cancellationToken);
-                        AddResult(r.files, r.bytes);
+                        lock (lockObj)
+                        {
+                            result.FilesDeleted += r.files;
+                            result.BytesFreed += r.bytes;
+                            result.VsCodeCacheFilesDeleted = r.files;
+                            result.AppCachesBytesFreed += r.bytes;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -590,7 +618,13 @@ namespace WindowsCleaner
                     try
                     {
                         var r = CleanNugetCache(options.DryRun, threadSafeLog, cancellationToken);
-                        AddResult(r.files, r.bytes);
+                        lock (lockObj)
+                        {
+                            result.FilesDeleted += r.files;
+                            result.BytesFreed += r.bytes;
+                            result.NugetCacheFilesDeleted = r.files;
+                            result.AppCachesBytesFreed += r.bytes;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -606,7 +640,13 @@ namespace WindowsCleaner
                     try
                     {
                         var r = CleanMavenCache(options.DryRun, threadSafeLog, cancellationToken);
-                        AddResult(r.files, r.bytes);
+                        lock (lockObj)
+                        {
+                            result.FilesDeleted += r.files;
+                            result.BytesFreed += r.bytes;
+                            result.MavenCacheFilesDeleted = r.files;
+                            result.AppCachesBytesFreed += r.bytes;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -622,7 +662,13 @@ namespace WindowsCleaner
                     try
                     {
                         var r = CleanNpmCache(options.DryRun, threadSafeLog, cancellationToken);
-                        AddResult(r.files, r.bytes);
+                        lock (lockObj)
+                        {
+                            result.FilesDeleted += r.files;
+                            result.BytesFreed += r.bytes;
+                            result.NpmCacheFilesDeleted = r.files;
+                            result.AppCachesBytesFreed += r.bytes;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -638,7 +684,13 @@ namespace WindowsCleaner
                     try
                     {
                         var r = CleanGameCaches(options.DryRun, threadSafeLog, cancellationToken);
-                        AddResult(r.files, r.bytes);
+                        lock (lockObj)
+                        {
+                            result.FilesDeleted += r.files;
+                            result.BytesFreed += r.bytes;
+                            result.GameCachesFilesDeleted = r.files;
+                            result.AppCachesBytesFreed += r.bytes;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -656,6 +708,10 @@ namespace WindowsCleaner
                     {
                         threadSafeLog("Optimisation SSD en cours...");
                         SystemOptimizer.OptimizeSsd(threadSafeLog);
+                        lock (lockObj)
+                        {
+                            result.SsdOptimized = true;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -671,8 +727,13 @@ namespace WindowsCleaner
                     try
                     {
                         threadSafeLog("Vérification santé disque (SMART)...");
-                        var report = "Vérification SMART effectuée avec succès";
-                        threadSafeLog(report);
+                        var report = SystemOptimizer.CheckDiskHealth();
+                        lock (lockObj)
+                        {
+                            result.DiskHealthChecked = true;
+                            result.DiskHealthReport = report;
+                        }
+                        threadSafeLog("Vérification SMART effectuée avec succès");
                     }
                     catch (Exception ex)
                     {
