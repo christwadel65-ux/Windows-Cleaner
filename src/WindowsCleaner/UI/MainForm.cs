@@ -21,6 +21,8 @@ namespace WindowsCleaner
         private Button btnDryRun = null!;
         private Button btnClean = null!;
         private Button btnCancel = null!;
+        private Button btnSelectAll = null!;
+        private Button btnDeselectAll = null!;
 
         private CheckBox chkRecycle = null!;
         private CheckBox chkSystemTemp = null!;
@@ -35,6 +37,7 @@ namespace WindowsCleaner
         // Advanced cleaning options
         private CheckBox chkOrphanedFiles = null!;
         private CheckBox chkClearMemoryCache = null!;
+        private CheckBox chkBrokenShortcuts = null!;
 
         // Profile selection
         private ComboBox cmbProfiles = null!;
@@ -133,6 +136,7 @@ namespace WindowsCleaner
                     Advanced = chkAdvanced.Checked,
                     CleanOrphanedFiles = chkOrphanedFiles.Checked,
                     ClearMemoryCache = chkClearMemoryCache.Checked,
+                    CleanBrokenShortcuts = chkBrokenShortcuts.Checked,
                     SelectedProfileName = cmbProfiles?.SelectedItem?.ToString() ?? CustomProfileLabel,
                 };
                 SettingsManager.Save(settings);
@@ -339,13 +343,33 @@ namespace WindowsCleaner
             var grpActions = new GroupBox() { Text = "Actions", Left = 12, Top = 50, Width = 380, Height = 135, Padding = new Padding(0, 8, 0, 0) };
             lblProfile = new Label() { Text = "Profil de nettoyage", Left = 15, Top = 22, AutoSize = true, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold) };
             cmbProfiles = new ComboBox() { Left = 15, Top = 42, Width = 340, Height = 32, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10) };
-            btnDryRun = new Button() { Text = "🔍 Simuler", Left = 15, Top = 80, Width = 170, Height = 40, Font = new Font("Segoe UI", 11, FontStyle.Bold) };
-            btnClean = new Button() { Text = "🧹 Nettoyer", Left = 195, Top = 80, Width = 170, Height = 40, Font = new Font("Segoe UI", 11, FontStyle.Bold) };
+            btnDryRun = new Button() { Text = "🔍 Simuler", Left = 15, Top = 80, Width = 105, Height = 40, Font = new Font("Segoe UI", 10, FontStyle.Bold) };
+            btnClean = new Button() { Text = "🧹 Nettoyer", Left = 125, Top = 80, Width = 105, Height = 40, Font = new Font("Segoe UI", 10, FontStyle.Bold) };
+            btnSelectAll = new Button() { Text = "✅\nTout", Left = 235, Top = 80, Width = 60, Height = 40, Font = new Font("Segoe UI", 8f, FontStyle.Bold), Tag = "selectall" };
+            btnDeselectAll = new Button() { Text = "❌\nRien", Left = 300, Top = 80, Width = 60, Height = 40, Font = new Font("Segoe UI", 8f, FontStyle.Bold), Tag = "deselectall" };
             btnCancel = new Button() { Text = "✖ Annuler", Left = 12, Top = 80, Width = 356, Height = 40, Enabled = false, Visible = false, Font = new Font("Segoe UI", 11, FontStyle.Bold) };
+            
+            // Ajouter les infobulles pour les boutons de sélection
+            var toolTip = new ToolTip();
+            toolTip.SetToolTip(btnSelectAll, "Cocher toutes les options de nettoyage en un clic");
+            toolTip.SetToolTip(btnDeselectAll, "Décocher toutes les options de nettoyage en un clic");
+            toolTip.SetToolTip(btnDryRun, "Simuler le nettoyage sans supprimer de fichiers\n(Mode test sûr)");
+            toolTip.SetToolTip(btnClean, "Exécuter le nettoyage avec suppression réelle\n(Vérifiez votre sélection avant de cliquer)");
+            
+            // Initialiser les couleurs des boutons de sélection (blanc par défaut)
+            btnSelectAll.BackColor = Color.White;
+            btnSelectAll.ForeColor = Color.Black;
+            btnSelectAll.FlatAppearance.BorderColor = Color.FromArgb(180, 180, 180);
+            btnDeselectAll.BackColor = Color.White;
+            btnDeselectAll.ForeColor = Color.Black;
+            btnDeselectAll.FlatAppearance.BorderColor = Color.FromArgb(180, 180, 180);
+            
             grpActions.Controls.Add(lblProfile);
             grpActions.Controls.Add(cmbProfiles);
             grpActions.Controls.Add(btnDryRun);
             grpActions.Controls.Add(btnClean);
+            grpActions.Controls.Add(btnSelectAll);
+            grpActions.Controls.Add(btnDeselectAll);
             grpActions.Controls.Add(btnCancel);
             btnCancel.BringToFront();
             Controls.Add(grpActions);
@@ -370,14 +394,16 @@ namespace WindowsCleaner
 
             // Advanced options - MEILLEURE PRÉSENTATION
             var grpAdvanced = new GroupBox() { Text = "Options Avancées", Left = 12, Top = 200, Width = 1168, Height = 75, Padding = new Padding(0, 8, 0, 0) };
-            chkVerbose = new CheckBox() { Text = "📝 Mode verbeux", Left = 15, Top = 30, Width = 250, AutoSize = false, Height = 28, Font = new Font("Segoe UI", 9.5f) };
-            chkAdvanced = new CheckBox() { Text = "📊 Rapport détaillé", Left = 280, Top = 30, Width = 250, AutoSize = false, Height = 28, Font = new Font("Segoe UI", 9.5f) };
-            chkOrphanedFiles = new CheckBox() { Text = "🧩 Fichiers orphelins", Left = 545, Top = 30, Width = 250, AutoSize = false, Height = 28, Font = new Font("Segoe UI", 9.5f) };
-            chkClearMemoryCache = new CheckBox() { Text = "💾 Cache mémoire", Left = 810, Top = 30, Width = 250, AutoSize = false, Height = 28, Font = new Font("Segoe UI", 9.5f) };
+            chkVerbose = new CheckBox() { Text = "📝 Mode verbeux", Left = 15, Top = 30, Width = 220, AutoSize = false, Height = 28, Font = new Font("Segoe UI", 9.5f) };
+            chkAdvanced = new CheckBox() { Text = "📊 Rapport détaillé", Left = 240, Top = 30, Width = 220, AutoSize = false, Height = 28, Font = new Font("Segoe UI", 9.5f) };
+            chkOrphanedFiles = new CheckBox() { Text = "🧩 Fichiers orphelins", Left = 465, Top = 30, Width = 220, AutoSize = false, Height = 28, Font = new Font("Segoe UI", 9.5f) };
+            chkClearMemoryCache = new CheckBox() { Text = "💾 Cache mémoire", Left = 690, Top = 30, Width = 220, AutoSize = false, Height = 28, Font = new Font("Segoe UI", 9.5f) };
+            chkBrokenShortcuts = new CheckBox() { Text = "🔗 Raccourcis cassés", Left = 915, Top = 30, Width = 220, AutoSize = false, Height = 28, Font = new Font("Segoe UI", 9.5f) };
             grpAdvanced.Controls.Add(chkVerbose);
             grpAdvanced.Controls.Add(chkAdvanced);
             grpAdvanced.Controls.Add(chkOrphanedFiles);
             grpAdvanced.Controls.Add(chkClearMemoryCache);
+            grpAdvanced.Controls.Add(chkBrokenShortcuts);
             Controls.Add(grpAdvanced);
 
             // Logs GroupBox - AUGMENTÉ
@@ -427,6 +453,8 @@ namespace WindowsCleaner
             btnDryRun.Click += async (s, e) => await StartCleanerAsync(dryRun: true);
             btnClean.Click += async (s, e) => await StartCleanerAsync(dryRun: false);
             btnCancel.Click += (s, e) => Cancel();
+            btnSelectAll.Click += (s, e) => SelectAllOptions(true);
+            btnDeselectAll.Click += (s, e) => SelectAllOptions(false);
             
             // Double-clic sur les logs pour ouvrir les chemins
             lvLogs.DoubleClick += LvLogs_DoubleClick;
@@ -439,7 +467,10 @@ namespace WindowsCleaner
                     foreach (Control subC in gb.Controls)
                     {
                         if (subC is CheckBox chk)
+                        {
                             chk.CheckedChanged += OnOptionChanged;
+                            chk.CheckedChanged += (s, e) => UpdateSelectionButtons();
+                        }
                     }
                 }
             }
@@ -448,18 +479,35 @@ namespace WindowsCleaner
             FormClosing += (s, e) => SaveOptions();
 
             // button visual polish - STYLE MODERNE
-            foreach (var b in new[] { btnDryRun, btnClean, btnCancel })
+            foreach (var b in new[] { btnDryRun, btnClean, btnCancel, btnSelectAll, btnDeselectAll })
             {
                 if (b == null) continue;
                 b.FlatStyle = FlatStyle.Flat;
-                b.FlatAppearance.BorderSize = 0;
-                b.FlatAppearance.MouseDownBackColor = Color.FromArgb(0, 100, 180);
-                b.FlatAppearance.MouseOverBackColor = Color.FromArgb(0, 140, 230);
-                b.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+                b.FlatAppearance.BorderSize = 1;
                 b.Cursor = Cursors.Hand;
-                b.BackColor = _accentColor;
-                b.ForeColor = Color.White;
+                
+                if (b == btnSelectAll || b == btnDeselectAll)
+                {
+                    b.Font = new Font("Segoe UI", 8f, FontStyle.Bold);
+                    b.FlatAppearance.BorderColor = Color.FromArgb(180, 180, 180);
+                    b.BackColor = Color.White;
+                    b.ForeColor = Color.Black;
+                    b.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 240, 240);
+                    b.FlatAppearance.MouseDownBackColor = Color.FromArgb(220, 220, 220);
+                }
+                else
+                {
+                    b.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+                    b.FlatAppearance.BorderSize = 0;
+                    b.FlatAppearance.MouseDownBackColor = Color.FromArgb(0, 100, 180);
+                    b.FlatAppearance.MouseOverBackColor = Color.FromArgb(0, 140, 230);
+                    b.BackColor = _accentColor;
+                    b.ForeColor = Color.White;
+                }
             }
+            
+            // Mise à jour initiale des boutons de sélection
+            UpdateSelectionButtons();
 
             // GroupBox styling - DESIGN ÉPURÉ
             var grpFont = new Font("Segoe UI", 9.75F, FontStyle.Bold);
@@ -797,6 +845,84 @@ SOFTWARE.";
             }
         }
 
+        private void SelectAllOptions(bool select)
+        {
+            _suppressProfileEvent = true; // Éviter de déclencher des événements de profil
+            
+            // Options standard
+            chkRecycle.Checked = select;
+            chkSystemTemp.Checked = select;
+            chkBrowsers.Checked = select;
+            chkWindowsUpdate.Checked = select;
+            chkThumbnails.Checked = select;
+            chkPrefetch.Checked = select;
+            chkFlushDns.Checked = select;
+            
+            // Options avancées
+            chkOrphanedFiles.Checked = select;
+            chkClearMemoryCache.Checked = select;
+            chkBrokenShortcuts.Checked = select;
+            
+            // Note: on ne touche pas chkVerbose et chkAdvanced car ce sont des options de comportement, pas de nettoyage
+            
+            _suppressProfileEvent = false;
+            
+            // Mettre le profil sur "Personnalisé"
+            if (cmbProfiles.Items.Contains(CustomProfileLabel))
+            {
+                cmbProfiles.SelectedItem = CustomProfileLabel;
+            }
+            
+            SaveOptions();
+        }
+
+        private void UpdateSelectionButtons()
+        {
+            // Vérifier si toutes les options de nettoyage sont cochées
+            bool allChecked = chkRecycle.Checked && chkSystemTemp.Checked && chkBrowsers.Checked &&
+                             chkWindowsUpdate.Checked && chkThumbnails.Checked && chkPrefetch.Checked &&
+                             chkFlushDns.Checked && chkOrphanedFiles.Checked && chkClearMemoryCache.Checked &&
+                             chkBrokenShortcuts.Checked;
+            
+            // Vérifier si aucune option n'est cochée
+            bool noneChecked = !chkRecycle.Checked && !chkSystemTemp.Checked && !chkBrowsers.Checked &&
+                              !chkWindowsUpdate.Checked && !chkThumbnails.Checked && !chkPrefetch.Checked &&
+                              !chkFlushDns.Checked && !chkOrphanedFiles.Checked && !chkClearMemoryCache.Checked &&
+                              !chkBrokenShortcuts.Checked;
+            
+            // Mettre à jour l'apparence des boutons avec des couleurs vives
+            if (allChecked)
+            {
+                // Toutes les options cochées → VERT
+                btnSelectAll.BackColor = Color.FromArgb(76, 175, 80); // Vert vif
+                btnSelectAll.ForeColor = Color.White;
+                btnSelectAll.FlatAppearance.BorderColor = Color.FromArgb(56, 142, 60);
+                btnDeselectAll.BackColor = Color.White;
+                btnDeselectAll.ForeColor = Color.Black;
+                btnDeselectAll.FlatAppearance.BorderColor = Color.FromArgb(180, 180, 180);
+            }
+            else if (noneChecked)
+            {
+                // Aucune option cochée → ROUGE
+                btnDeselectAll.BackColor = Color.FromArgb(244, 67, 54); // Rouge vif
+                btnDeselectAll.ForeColor = Color.White;
+                btnDeselectAll.FlatAppearance.BorderColor = Color.FromArgb(198, 40, 40);
+                btnSelectAll.BackColor = Color.White;
+                btnSelectAll.ForeColor = Color.Black;
+                btnSelectAll.FlatAppearance.BorderColor = Color.FromArgb(180, 180, 180);
+            }
+            else
+            {
+                // Partiellement sélectionné - ORANGE pour signaler
+                btnSelectAll.BackColor = Color.FromArgb(255, 152, 0); // Orange
+                btnSelectAll.ForeColor = Color.White;
+                btnSelectAll.FlatAppearance.BorderColor = Color.FromArgb(230, 126, 0);
+                btnDeselectAll.BackColor = Color.FromArgb(255, 152, 0); // Orange
+                btnDeselectAll.ForeColor = Color.White;
+                btnDeselectAll.FlatAppearance.BorderColor = Color.FromArgb(230, 126, 0);
+            }
+        }
+
         private async Task StartCleanerAsync(bool dryRun)
         {
             btnClean.Enabled = false;
@@ -842,6 +968,7 @@ SOFTWARE.";
                     CleanOrphanedFiles = chkOrphanedFiles.Checked,
                     CleanApplicationLogs = false,
                     ClearMemoryCache = chkClearMemoryCache.Checked,
+                    CleanBrokenShortcuts = chkBrokenShortcuts.Checked,
                 };
 
             // advanced mode: generate and show report before executing (unless dry-run)

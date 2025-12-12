@@ -87,6 +87,9 @@ namespace WindowsCleaner
         /// <summary>Vide le presse-papiers Windows</summary>
         public bool CleanClipboard { get; set; }
         
+        /// <summary>Supprime les raccourcis (.lnk) cassés dont la cible n'existe plus</summary>
+        public bool CleanBrokenShortcuts { get; set; }
+        
         /// <summary>Ferme automatiquement les navigateurs avant le nettoyage (recommandé)</summary>
         public bool CloseBrowsersIfNeeded { get; set; } = true;
     }
@@ -122,6 +125,10 @@ namespace WindowsCleaner
         public bool DiskHealthChecked { get; set; }
         /// <summary>Rapport SMART de santé du disque</summary>
         public string DiskHealthReport { get; set; } = string.Empty;
+        
+        // Statistiques raccourcis
+        /// <summary>Nombre de raccourcis cassés supprimés</summary>
+        public int BrokenShortcutsDeleted { get; set; }
     }
 
     /// <summary>
@@ -822,6 +829,27 @@ namespace WindowsCleaner
                     catch (Exception ex)
                     {
                         Logger.Log(LogLevel.Error, $"Erreur vidage presse-papiers: {ex.Message}");
+                    }
+                }, cancellationToken));
+            }
+            
+            if (options.CleanBrokenShortcuts)
+            {
+                tasks.Add(Task.Run(() =>
+                {
+                    try
+                    {
+                        var r = CleanBrokenShortcuts(options.DryRun, threadSafeLog, cancellationToken);
+                        lock (lockObj)
+                        {
+                            result.FilesDeleted += r.files;
+                            result.BytesFreed += r.bytes;
+                            result.BrokenShortcutsDeleted = r.files;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Log(LogLevel.Error, $"Erreur nettoyage raccourcis cassés: {ex.Message}");
                     }
                 }, cancellationToken));
             }
@@ -2128,6 +2156,115 @@ namespace WindowsCleaner
             {
                 log($"Erreur vidage presse-papiers: {ex.Message}");
                 return (0, 0);
+            }
+        }
+        
+        private static (int files, long bytes) CleanBrokenShortcuts(bool dryRun, Action<string> log, CancellationToken cancellationToken)
+        {
+            log("Recherche des raccourcis cassés...");
+            int filesDeleted = 0;
+            long bytesFreed = 0;
+
+            var shortcutLocations = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu),
+                Environment.GetFolderPath(Environment.SpecialFolder.Recent),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft\\Windows\\Recent"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Links")
+            };
+
+            foreach (var location in shortcutLocations)
+            {
+                if (string.IsNullOrEmpty(location) || !Directory.Exists(location))
+                    continue;
+
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    
+                    var shortcuts = Directory.GetFiles(location, "*.lnk", SearchOption.AllDirectories);
+                    log($"Vérification de {shortcuts.Length} raccourcis dans {location}...");
+
+                    foreach (var shortcut in shortcuts)
+                    {
+                        try
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            
+                            if (IsShortcutBroken(shortcut, log))
+                            {
+                                var fileInfo = new FileInfo(shortcut);
+                                long size = fileInfo.Length;
+
+                                if (!dryRun)
+                                {
+                                    File.Delete(shortcut);
+                                    log($"✓ Supprimé: {Path.GetFileName(shortcut)}");
+                                }
+                                else
+                                {
+                                    log($"(dry-run) Serait supprimé: {Path.GetFileName(shortcut)}");
+                                }
+
+                                filesDeleted++;
+                                bytesFreed += size;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            log($"Erreur lors de la vérification de {Path.GetFileName(shortcut)}: {ex.Message}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log($"Erreur lors du scan de {location}: {ex.Message}");
+                }
+            }
+
+            log($"Raccourcis cassés trouvés: {filesDeleted} ({FormatBytes(bytesFreed)})");
+            return (filesDeleted, bytesFreed);
+        }
+
+        private static bool IsShortcutBroken(string shortcutPath, Action<string> log)
+        {
+            try
+            {
+                // Utiliser IWshRuntimeLibrary pour lire le raccourci
+                Type? shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType == null)
+                    return false;
+
+                dynamic? shell = Activator.CreateInstance(shellType);
+                if (shell == null)
+                    return false;
+
+                try
+                {
+                    dynamic shortcut = shell.CreateShortcut(shortcutPath);
+                    string targetPath = shortcut.TargetPath;
+
+                    // Si la cible est vide ou n'existe pas, le raccourci est cassé
+                    if (string.IsNullOrWhiteSpace(targetPath))
+                        return true;
+
+                    // Vérifier si le fichier ou dossier cible existe
+                    bool exists = File.Exists(targetPath) || Directory.Exists(targetPath);
+                    return !exists;
+                }
+                finally
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(shell);
+                }
+            }
+            catch (Exception ex)
+            {
+                log($"Impossible de vérifier {Path.GetFileName(shortcutPath)}: {ex.Message}");
+                return false; // En cas d'erreur, ne pas supprimer par sécurité
             }
         }
         

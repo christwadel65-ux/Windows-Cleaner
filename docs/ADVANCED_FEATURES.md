@@ -49,6 +49,16 @@ Windows Cleaner inclut maintenant un ensemble complet d'options de nettoyage ava
 - Le cache se reconstitue au fil de l'utilisation
 - Requiert les droits administrateur
 
+### 6. **Suppression des Raccourcis Cassés**
+**Localisation** : Bureau, Menu Démarrer, Dossier Récents, Liens utilisateur
+**Description** : Détecte et supprime automatiquement les raccourcis (.lnk) dont la cible n'existe plus. Nettoie le bureau et le menu démarrer des liens morts.
+**Impact** :
+- Peut trouver 5 à 50 raccourcis cassés selon l'utilisation
+- Libère généralement 50 KB à 500 KB
+- Améliore l'organisation et la clarté du bureau
+- Sûr pour exécuter régulièrement
+- Aucun droit administrateur requis
+
 ## Comment Utiliser les Options Avancées
 
 ### Activation
@@ -136,11 +146,10 @@ R: Selon votre configuration : 500 MB à 5 GB. Utilisez "Dry Run" pour estimer.
 
 Les futures versions pourraient inclure:
 - Nettoyage des fichiers de cache des applications (AppData)
-- Suppression des raccourcis cassés
 - Archivage des anciens fichiers journaux
 - Optimisation de la partition système
 
 ---
 
-**Version** : 1.0  
+**Version** : 1.0.8  
 **Dernière mise à jour** : Décembre 2025
