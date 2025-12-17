@@ -1,13 +1,26 @@
-# Windows Cleaner v2.0.0
+# Windows Cleaner v2.0.1
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](../LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://www.microsoft.com/windows)
-[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](https://github.com/christwadel65-ux/Windows-Cleaner/releases)
+[![Version](https://img.shields.io/badge/version-2.0.1-brightgreen.svg)](https://github.com/christwadel65-ux/Windows-Cleaner/releases)
 
 Outil professionnel en C# (WinForms + CLI) pour nettoyer, analyser et optimiser votre système Windows. Interface moderne avec support du mode sombre, système de profils, CLI complet, statistiques, mise à jour automatique, et options de nettoyage développeur.
 
-## 🆕 Nouveautés v2.0.0 (15 décembre 2025)
+## 🆕 Nouveautés v2.0.1 (17 décembre 2025)
+
+### 🔒 Vie privée : historique navigateurs
+- Nouvelle option **"Historique navigateurs"** dans le bloc Nettoyage Standard
+- Efface l'historique complet Chrome / Edge / Firefox (SQLite + WAL/SHM) après fermeture des navigateurs
+- Incluse dans les boutons **✅ Tout / ❌ Rien**, profils prédéfinis et sauvegarde des paramètres
+- Comptabilisée dans les statistiques (fichiers supprimés / octets libérés) et visible dans les logs
+
+### 🛠️ Packaging & version
+- Version applicative portée à **2.0.1** (csproj, binaire, badge)
+- Installeur Inno Setup : **AppVersion 2.0.1** et `OutputBaseFilename=WindowsCleaner-Setup-2.0.1`
+- Binaries Release mis à jour dans `bin/Release/net10.0-windows/` et synchronisés dans `release/`
+
+### ♻️ Rappels 2.0.0 (15 décembre 2025)
 
 ### ✨ Version Majeure - Refonte Complète
 
@@ -105,6 +118,48 @@ Taille: 465.75 GB (Libre: 123.45 GB)
 - **Feedback visuel immédiat** sur l'état de sélection
 
 #### 🔧 Améliorations Techniques
+- Migration complète vers **.NET 10.0-windows**
+- Restructuration des méthodes d'énumération (correction erreurs CS1626)
+- Optimisation mémoire et gestion des ressources
+- Corrections de typage (AuditManager, BackupManager)
+- **Système de tooltips** avec ToolTip .NET standard
+- **Système de feedback visuel** avec détection d'état en temps réel
+- Documentation enrichie et mise à jour
+
+## 🆕 Nouveautés v1.0.8 (12 décembre 2025)
+
+### ✨ Nouvelles Fonctionnalités
+
+#### 🔗 Suppression des Raccourcis Cassés
+- **Détection automatique** des raccourcis (.lnk) dont la cible n'existe plus
+- **Scan intelligent** : Bureau, Menu Démarrer, Documents Récents, Dossier Liens
+- **Vérification via COM** (WScript.Shell) pour validation précise
+- **Suppression sécurisée** avec support du mode Dry-Run
+- **Aucun privilège admin requis**
+- Améliore la propreté du bureau et des menus
+
+#### ☑ Boutons de Sélection Rapide
+- **Bouton "✅ Tout"** : Coche toutes les options de nettoyage en un clic
+- **Bouton "❌ Rien"** : Décoche toutes les options rapidement
+- **Emplacement** : Groupe Actions, à côté des boutons Simuler/Nettoyer
+- **Couleurs intelligentes** :
+  - 🟢 VERT VIF si tout est coché
+  - 🔴 ROUGE VIF si rien n'est coché
+  - 🟠 ORANGE VIF si sélection partielle
+- **Infobulles explicites** : Description au survol de la souris
+- **Bascule automatique** vers le profil "Personnalisé (manuel)"
+- **Sélectif** : Affecte uniquement les options de nettoyage (préserve Mode verbeux et Rapport détaillé)
+
+### 🎨 Améliorations de l'Interface
+- **Infobulles contextuelles** sur tous les boutons d'action
+  - 🔍 Simuler : "Simuler le nettoyage sans supprimer (Mode test sûr)"
+  - 🧹 Nettoyer : "Exécuter le nettoyage avec suppression réelle (Vérifiez d'abord)"
+  - ✅ Tout : "Cocher toutes les options en un clic"
+  - ❌ Rien : "Décocher toutes les options en un clic"
+- **Design Material moderne** avec palette de couleurs vives
+- **Feedback visuel immédiat** sur l'état de sélection
+
+### 🔧 Améliorations Techniques
 - Migration complète vers **.NET 10.0-windows**
 - Restructuration des méthodes d'énumération (correction erreurs CS1626)
 - Optimisation mémoire et gestion des ressources
