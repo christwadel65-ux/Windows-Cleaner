@@ -1,18 +1,36 @@
-# Windows Cleaner v2.0.1
+# Windows Cleaner v2.0.2
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](../LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://www.microsoft.com/windows)
-[![Version](https://img.shields.io/badge/version-2.0.1-brightgreen.svg)](https://github.com/christwadel65-ux/Windows-Cleaner/releases)
+[![Version](https://img.shields.io/badge/version-2.0.2-brightgreen.svg)](https://github.com/christwadel65-ux/Windows-Cleaner/releases)
 
 Outil professionnel en C# (WinForms + CLI) pour nettoyer, analyser et optimiser votre système Windows. Interface moderne avec support du mode sombre, système de profils, CLI complet, statistiques, mise à jour automatique, et options de nettoyage développeur.
 
-## 🆕 Nouveautés v2.0.1 (17 décembre 2025)
+## 🆕 Nouveautés v2.0.2 (18 décembre 2025)
 
-### 🔒 Vie privée : historique navigateurs
-- Nouvelle option **"Historique navigateurs"** dans le bloc Nettoyage Standard
-- Efface l'historique complet Chrome / Edge / Firefox (SQLite + WAL/SHM) après fermeture des navigateurs
-- Incluse dans les boutons **✅ Tout / ❌ Rien**, profils prédéfinis et sauvegarde des paramètres
+### 🔒 Amélioration Vie Privée : Historique Navigateurs et Onglets Récents
+- **Case à cocher dédiée "🕘 Historique navigateurs"** dans le bloc Nettoyage Standard (cochée par défaut)
+- **Nettoyage complet de l'historique** : Chrome/Edge/Firefox (fichiers History, places.sqlite)
+- **Suppression des onglets récents/sessions** :
+  - Chrome/Edge : dossiers `Sessions` + fichiers `Last Session`, `Last Tabs`, `Current Session`, `Current Tabs`
+  - Firefox : dossier `sessionstore-backups` + fichier `sessionstore.jsonlz4`
+- **Fermeture automatique des navigateurs** avant nettoyage pour éviter les verrous
+- **Option indépendante** : choix de nettoyer cache navigateurs sans historique (ou vice-versa)
+- **Intégration totale** : profils prédéfinis, boutons Tout/Rien, sauvegarde des paramètres
+- **Statistiques détaillées** : comptabilise fichiers supprimés et octets libérés
+
+### 🛠️ Gestion de Version Centralisée
+- **Classe AppVersion** : lecture automatique de la version depuis l'assembly
+- **Script update_version.ps1** : mise à jour automatique de tous les fichiers (csproj, iss, README)
+- **Documentation complète** : [VERSION_MANAGEMENT.md](docs/VERSION_MANAGEMENT.md)
+- Plus besoin de modifier manuellement le code source pour changer la version
+
+### 📋 Versions Précédentes
+
+#### v2.0.1 (17 décembre 2025)
+- Ajout initial de la suppression d'historique navigateurs (fichiers History/places.sqlite)
+- Fermeture automatique des navigateurs avant nettoyage
 - Comptabilisée dans les statistiques (fichiers supprimés / octets libérés) et visible dans les logs
 
 ### 🛠️ Packaging & version
