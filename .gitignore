@@ -10,6 +10,8 @@ Output/
 publish-output/
 bin/
 obj/
+scripts/
+plans/
 *.iss
 # Distribution artifacts
 release/
