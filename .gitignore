@@ -6,6 +6,7 @@ obj/
 .vs/
 scripts/
 plans/
+src/
 
 .fake
 Output/
