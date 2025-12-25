@@ -1,19 +1,53 @@
+# Build directories
 bin/
 obj/
+Output/
+publish-output/
+release/
+
+# IDE files
 *.user
 *.suo
 *.userprefs
 .vs/
+.vscode/settings.json
+.vscode/launch.json
+
+# Project files
+*.iss
 scripts/
 plans/
-src/
 
-.fake
-Output/
-publish-output/
-bin/
-obj/
-*.iss
-# Distribution artifacts
-release/
+# Executables
 *.exe
+*.dll
+*.pdb
+
+# Sensitive files (NEVER COMMIT)
+*.key
+*.pem
+*.p12
+*.pfx
+.env
+.env.local
+appsettings.Development.json
+appsettings.*.json
+secrets.json
+private-key.xml
+credentials.json
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Temp files
+*.bak
+*.swp
+*~
+.fake
