@@ -7,7 +7,8 @@
 
 Outil professionnel en C# (WinForms + CLI) pour nettoyer, analyser et optimiser votre système Windows. Interface moderne avec support du mode sombre, système de profils, CLI complet, statistiques, mise à jour automatique, et options de nettoyage développeur.
 
-<img width="1178" height="820" alt="image" src="https://github.com/user-attachments/assets/1dfea2d7-8805-43c3-bd28-ff2559ca3afb" />
+<img width="800" height="600" alt="image" src="https://github.com/user-attachments/assets/ce788fff-b0d5-40e1-a733-6c11f7021c32" />
+
 
 ## 🆕 Nouveautés v2.0.2 (18 décembre 2025)
 
