@@ -37,6 +37,10 @@ jobs:
       - name: Restore dependencies
         run: |
           dotnet restore src/WindowsCleaner/WindowsCleaner.csproj
+          if ($LASTEXITCODE -ne 0) {
+            echo "::warning::Dependency restoration failed - subsequent steps may not work correctly"
+            exit 0
+          }
           echo "Dependencies restored successfully"
         continue-on-error: true
 
@@ -49,7 +53,7 @@ jobs:
       - name: Check vulnerable packages (optional)
         run: |
           echo "Checking for vulnerabilities..."
-          dotnet list src/WindowsCleaner/WindowsCleaner.csproj package --vulnerable --include-transitive || echo "No vulnerabilities found or check not available"
+          dotnet list src/WindowsCleaner/WindowsCleaner.csproj package --vulnerable --include-transitive || echo "Vulnerability check failed or unavailable"
         continue-on-error: true
 
   codeql:
